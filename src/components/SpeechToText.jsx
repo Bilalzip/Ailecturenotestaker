@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 
 const SpeechToText = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState(localStorage.getItem('transcript') || ''); // Load transcript from localStorage
   const [formattedNotes, setFormattedNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const recognitionRef = useRef(null);
@@ -11,7 +11,10 @@ const SpeechToText = () => {
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
   const apiUrl = process.env.REACT_APP_API_URL;
 
-  console.log(apiKey)
+  // Save transcript to localStorage whenever it updates
+  useEffect(() => {
+    localStorage.setItem('transcript', transcript);
+  }, [transcript]);
 
   // Start recording
   const startRecording = () => {
@@ -33,7 +36,7 @@ const SpeechToText = () => {
           finalTranscript += transcriptPart;
         }
       }
-      setTranscript(finalTranscript);
+      setTranscript(prevTranscript => prevTranscript + finalTranscript); // Append to existing transcript
     };
 
     recognitionRef.current.onerror = (event) => {
@@ -46,16 +49,14 @@ const SpeechToText = () => {
 
   // Stop recording
   const stopRecording = () => {
-    console.log(process.env.OPEN_AI_KEY)
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
     setIsRecording(false);
   };
 
- // Send transcription to OpenAI API
-const generateNotes = async () => {
-    console.log(process.env.OPEN_AI_KEY)
+  // Send transcription to OpenAI API
+  const generateNotes = async () => {
     setLoading(true);
     try {
       const messages = [
@@ -97,11 +98,10 @@ const generateNotes = async () => {
     }
     setLoading(false);
   };
-  
 
   return (
     <div>
-      <h2>Speech to Text Transcription</h2>
+      <h2 className='text-blue-500 text-bold'>Speech to Text Transcription</h2>
       <button onClick={isRecording ? stopRecording : startRecording}>
         {isRecording ? 'Stop Recording' : 'Start Recording'}
       </button>
